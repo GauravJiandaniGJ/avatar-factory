@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Avatar Factory — JSON config in, rigged lip-sync-ready 3D avatar out</title>
+<meta name="description" content="Open-source headless avatar generator: Blender + MPFB pipeline that turns a JSON config into a rigged, ARKit/viseme lip-sync-ready GLB. Physique, face, outfit, skin tone and even t-shirt branding are config. MIT, $0 per avatar.">
+<link rel="canonical" href="https://gauravjiandanigj.github.io/avatar-factory/">
+<link rel="icon" href="favicon.png">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Avatar Factory — JSON in, rigged 3D avatar out">
+<meta property="og:description" content="Open-source headless avatar generator built on Blender + MPFB. Lip-sync-ready GLBs for TalkingHead/three.js. MIT.">
+<meta property="og:url" content="https://gauravjiandanigj.github.io/avatar-factory/">
+<meta property="og:image" content="https://gauravjiandanigj.github.io/avatar-factory/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareSourceCode",
+  "name": "Avatar Factory",
+  "description": "Headless JSON-to-GLB avatar generator: Blender + MPFB pipeline producing rigged, ARKit/viseme lip-sync-ready avatars.",
+  "codeRepository": "https://github.com/GauravJiandaniGJ/avatar-factory",
+  "programmingLanguage": ["Python", "Shell"],
+  "license": "https://opensource.org/licenses/MIT"
+}
+</script>
+<style>
+  :root { --bg:#060912; --panel:#11162e; --ink:#e7eaf5; --dim:#9aa3bf; --brand:#8aa0ff; --accent:#6ef0ff; }
+  * { box-sizing:border-box; margin:0; }
+  body { background:var(--bg); color:var(--ink); font:16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width:960px; margin:0 auto; padding:0 20px; }
+  header { padding:72px 0 48px; text-align:center;
+           background:radial-gradient(80% 60% at 50% 0%, #1b2348 0%, transparent 70%); }
+  h1 { font-size:clamp(2rem,6vw,3.2rem); font-weight:900; letter-spacing:-0.02em; }
+  h1 span { background:linear-gradient(90deg,var(--brand),var(--accent)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .sub { margin:16px auto 0; max-width:560px; color:var(--dim); }
+  .cta { display:inline-block; margin-top:28px; padding:14px 32px; border-radius:16px; background:#6473f2;
+         color:#fff; font-weight:700; text-decoration:none; box-shadow:0 12px 40px rgba(100,115,242,.35); }
+  .cta.ghost { background:transparent; border:1px solid rgba(255,255,255,.15); box-shadow:none; margin-left:10px; }
+  section { padding:44px 0; }
+  h2 { font-size:1.5rem; margin-bottom:16px; }
+  .grid { display:grid; gap:16px; }
+  @media(min-width:700px){ .grid.cols3{ grid-template-columns:repeat(3,1fr);} .grid.cols2{ grid-template-columns:repeat(2,1fr);} }
+  .card { background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.09); border-radius:18px; padding:20px; }
+  .card h3 { font-size:1rem; margin-bottom:6px; }
+  .card p { font-size:.88rem; color:var(--dim); }
+  pre { background:#0a0e22; border:1px solid rgba(255,255,255,.09); border-radius:14px; padding:18px;
+        overflow-x:auto; font-size:.85rem; line-height:1.5; color:#c9d2f0; }
+  code.k { color:var(--accent); }
+  .shot { width:100%; border-radius:18px; border:1px solid rgba(255,255,255,.1); }
+  footer { border-top:1px solid rgba(255,255,255,.07); padding:36px 0; text-align:center; font-size:.8rem; color:var(--dim); }
+  footer a { color:var(--brand); text-decoration:none; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>Avatar Factory<br><span>JSON in. 3D coach out.</span></h1>
+    <p class="sub">An open-source, fully headless avatar generator: Blender + MPFB scripted end-to-end.
+    Physique, face, outfit, skin tone — even the print on the t-shirt — are a config file.
+    Output: rigged, lip-sync-ready GLB, ~5&nbsp;MB, yours to ship.</p>
+    <a class="cta" href="https://github.com/GauravJiandaniGJ/avatar-factory">Get it on GitHub</a>
+    <a class="cta ghost" href="#quickstart">Quickstart</a>
+  </div>
+</header>
+
+<section class="wrap">
+  <img class="shot" src="og-image.png" alt="A generated bodybuilder coach avatar next to the Avatar Factory wordmark">
+</section>
+
+<section class="wrap">
+  <h2>Why it exists</h2>
+  <p style="color:var(--dim); max-width:640px">Ready Player Me shut down in January 2026 and took thousands of
+  apps' avatar pipelines with it. Avatar Factory is the un-shut-downable answer: everything runs on your
+  machine from open parts — Blender, the MPFB human generator, CC0 asset packs, and the MIT rig files from
+  the TalkingHead project. No API keys, no per-avatar fees, no vendor.</p>
+</section>
+
+<section class="wrap">
+  <h2>What a config controls</h2>
+  <div class="grid cols3">
+    <div class="card"><h3>💪 Physique</h3><p><code>"muscle": 1.0</code> is a bodybuilder. Macro sliders + per-muscle-group targets: V-taper, delts, arms, jawline.</p></div>
+    <div class="card"><h3>🗣 Lip-sync ready</h3><p>52 ARKit face shapes + Oculus visemes baked in — drops straight into TalkingHead / three.js and talks.</p></div>
+    <div class="card"><h3>🎽 Wardrobe & brand</h3><p>Outfits from CC0 packs; the texture pre-step tints skin and prints your logo on the shirt from JSON.</p></div>
+    <div class="card"><h3>🦴 Mixamo rig</h3><p>Standard humanoid skeleton — plays Mixamo animations, runtime bone-scaling friendly.</p></div>
+    <div class="card"><h3>📦 Small files</h3><p>WebP textures, 16-bit quantization, sparse morphs: ~5 MB per avatar with a 2048 face.</p></div>
+    <div class="card"><h3>⚖️ Clean licensing</h3><p>MIT tool, CC0 ingredients (+2 CC-BY packs needing one credit line). Generated avatars are yours, commercially.</p></div>
+  </div>
+</section>
+
+<section class="wrap" id="quickstart">
+  <h2>Quickstart</h2>
+  <pre><code><code class="k">git</code> clone https://github.com/GauravJiandaniGJ/avatar-factory && cd avatar-factory
+<code class="k">./setup.sh</code>        # one-time: Blender + MPFB + asset packs (~600MB, macOS)
+<code class="k">./make.sh</code> all      # male.json + female.json → out/*.glb
+
+# new character = new config
+cp male.json trainer-2.json   # edit physique/skin/hair/outfit…
+<code class="k">./make.sh</code> trainer-2</code></pre>
+</section>
+
+<section class="wrap">
+  <h2>Seen in the wild</h2>
+  <p style="color:var(--dim)">Avatar Factory generates the interactive 3D coaches inside
+  <a style="color:var(--brand)" href="https://fitness.todoitservices.com/">Fitness Tracker</a> —
+  an AI personal trainer app built for Indian food — where they lip-sync daily briefs, celebrate
+  PRs on a full-screen stage, and watch your form through the camera.</p>
+</section>
+
+<footer>
+  <div class="wrap">
+    <a href="https://github.com/GauravJiandaniGJ/avatar-factory">GitHub</a> ·
+    <a href="https://github.com/met4citizen/TalkingHead">TalkingHead engine</a> ·
+    <a href="https://static.makehumancommunity.org/mpfb.html">MPFB</a><br><br>
+    MIT © 2026 Gaurav Jiandani · Rig/morph definitions © Mika Suominen (MIT) · Human assets: MakeHuman community (CC0/CC-BY)
+  </div>
+</footer>
+
+</body>
+</html>
