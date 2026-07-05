@@ -64,9 +64,10 @@ PY
 }
 
 case "${1:-all}" in
-  male)   build male ;;
-  female) build female ;;
-  all)    build male; build female ;;
-  *) echo "usage: make.sh [male|female|all]"; exit 1 ;;
+  all) build male; build female ;;
+  *)
+    if [ -f "$DIR/$1.json" ]; then build "$1"
+    else echo "usage: make.sh [all|<config-name>] — no $1.json here"; exit 1
+    fi ;;
 esac
 echo "DONE. GLBs in $DIR/out/ — copy them wherever your app serves avatar models."
