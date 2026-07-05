@@ -1,0 +1,318 @@
+# Coach avatar generator — builds a TalkingHead-compatible coach GLB from a JSON config,
+# fully headless. This is "our own avatar tool": physique comes from MakeHuman macro sliders
+# (muscle/weight/height/...), assets (skin/hair/outfit) from the CC0/CC-BY MakeHuman community
+# packs, the rig + ARKit/viseme morphs from the TalkingHead project's MPFB workflow files.
+#
+#   blender --background --python tools/coach-avatar/generate_coach.py -- \
+#       tools/coach-avatar/male.json /tmp/male.glb [/tmp/preview.png]
+#
+# Prereqs (one-time, see tools/coach-avatar/README.md):
+#   - Blender 4.5+ with the MPFB extension installed and enabled
+#   - MakeHuman asset packs extracted into MPFB's user data dir
+#   - TalkingHead workflow files (talkinghead.mpfbskel, talkinghead.mhw,
+#     talkinghead-targets.zip, talkinghead-addon.py) in tools/coach-avatar/vendor/
+#
+# Everything scripted here mirrors the manual Blender workflow documented in
+# https://github.com/met4citizen/TalkingHead/blob/main/blender/MPFB/MPFB.md
+import bpy
+import json
+import math
+import sys
+from pathlib import Path
+
+ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+if len(ARGS) < 2:
+    raise SystemExit("usage: blender --background --python generate_coach.py -- <config.json> <out.glb> [preview.png]")
+CONFIG_PATH, OUT_GLB = Path(ARGS[0]), Path(ARGS[1])
+PREVIEW = Path(ARGS[2]) if len(ARGS) > 2 else None
+VENDOR = Path(__file__).parent / "vendor"
+
+CFG = json.loads(CONFIG_PATH.read_text())
+
+# ---- MPFB services ------------------------------------------------------------------------
+from bl_ext.blender_org.mpfb.services.humanservice import HumanService
+from bl_ext.blender_org.mpfb.services.objectservice import ObjectService
+from bl_ext.blender_org.mpfb.services.rigservice import RigService
+from bl_ext.blender_org.mpfb.entities.rig import Rig
+
+# ---- TalkingHead addon helpers (plain functions; exec the file, skip registration) ---------
+th = {"__file__": str(VENDOR / "talkinghead-addon.py"), "__name__": "talkinghead_helpers"}
+exec(compile((VENDOR / "talkinghead-addon.py").read_text(), "talkinghead-addon.py", "exec"), th)
+
+def log(*a):
+    print("[coach]", *a, flush=True)
+
+# Start from an EMPTY scene — the default Cube/Light/Camera would ride into the GLB
+# (the select-all export grabs everything).
+bpy.ops.wm.read_factory_settings(use_empty=True)
+
+# ---- 1) Create the human (physique + assets) ----------------------------------------------
+human_info = HumanService._create_default_human_info_dict()
+human_info["name"] = CFG["name"]
+human_info["phenotype"] = CFG["phenotype"]
+human_info["eyes"] = CFG.get("eyes", "low-poly/low-poly.mhclo")
+human_info["teeth"] = CFG.get("teeth", "teeth_base/teeth_base.mhclo")
+human_info["tongue"] = CFG.get("tongue", "tongue01/tongue01.mhclo")
+human_info["eyebrows"] = CFG.get("eyebrows", "")
+human_info["eyelashes"] = CFG.get("eyelashes", "")
+human_info["hair"] = CFG.get("hair", "")
+human_info["clothes"] = CFG.get("clothes", [])
+human_info["targets"] = CFG.get("targets", [])   # detail targets: the bodybuilder layer on top of the macros
+human_info["skin_mhmat"] = CFG.get("skin", "")
+# GAMEENGINE = plain Principled-BSDF PBR materials — the ONLY node layout the glTF exporter
+# maps faithfully (MAKESKIN/ENHANCED_SSS node graphs export as black in three.js).
+# EXCEPTION: eyes keep MAKESKIN — the GAMEENGINE eye material loses the iris texture and
+# exports as blank white spheres; the MakeSkin eye graph survives export.
+human_info["skin_material_type"] = "GAMEENGINE"
+human_info["clothes_material_type"] = "GAMEENGINE"
+human_info["eyes_material_type"] = "MAKESKIN"
+
+settings = HumanService.get_default_deserialization_settings()
+settings["subdiv_levels"] = 0          # mobile budget — no subdivision
+settings["load_clothes"] = True
+settings["scale"] = 0.1                # MPFB decimeter default; final scale set on the armature
+
+log("creating human", CFG["name"])
+basemesh = HumanService.deserialize_from_dict(human_info, settings)
+log("human created:", basemesh.name, "verts:", len(basemesh.data.vertices))
+
+# FLATTEN the phenotype into the mesh. MPFB applies macros (gender/age/muscle/race) and our
+# detail targets as ACTIVE shape keys — exporting those alongside the face morphs is what
+# mangled the avatar in-app: TalkingHead zeroes every morph influence at load, stripping the
+# phenotype and collapsing the body/face to the raw base shape under the fitted hair/clothes
+# (Blender re-import kept the key values, which is why renders looked fine). Bake the current
+# mix into the basis so ONLY the ARKit/viseme keys built later are exported, all zero-valued.
+def flatten_shape_keys(obj):
+    if not obj.data.shape_keys:
+        return
+    obj.shape_key_add(name="__flat__", from_mix=True)
+    for kb in [k for k in obj.data.shape_keys.key_blocks if k.name != "__flat__"]:
+        obj.shape_key_remove(kb)
+    obj.shape_key_remove(obj.data.shape_keys.key_blocks["__flat__"])
+
+flatten_shape_keys(basemesh)
+log("phenotype flattened into basis; shape keys now:",
+    len(basemesh.data.shape_keys.key_blocks) if basemesh.data.shape_keys else 0)
+
+# Texture overrides from the prepare_textures.py pre-step (brand print, skin tint): repoint
+# the matching Blender images at the edited copies so they embed into the GLB.
+overrides_path = Path(__file__).parent / "out" / "tex" / f"{CFG['name']}.overrides.json"
+if overrides_path.exists():
+    overrides = json.loads(overrides_path.read_text())
+    for img in bpy.data.images:
+        stem = Path(img.filepath).stem if img.filepath else img.name
+        for key, path in overrides.items():
+            if key == stem or key == img.name:
+                img.filepath = path
+                img.reload()
+                log("texture override:", key, "→", Path(path).name)
+
+# ---- 2) TalkingHead rig + weights -----------------------------------------------------------
+log("loading talkinghead rig")
+bpy.ops.object.select_all(action='DESELECT')
+basemesh.select_set(True)
+bpy.context.view_layer.objects.active = basemesh
+
+rig = Rig.from_json_file_and_basemesh(str(VENDOR / "talkinghead.mpfbskel"), basemesh)
+armature = rig.create_armature_and_fit_to_basemesh(for_developer=True)
+basemesh.parent = armature
+log("rig created:", armature.name, "bones:", len(armature.data.bones))
+
+with open(VENDOR / "talkinghead.mhw") as f:
+    mhw = json.load(f)
+RigService.apply_weights([armature], basemesh, mhw, all=False, replace=True)
+log("weights applied")
+
+# Drop stray helper objects (Rig.create_armature… leaves a dev Icosphere) — anything that
+# isn't the basemesh or a config asset must not ride into the GLB.
+for obj in list(bpy.data.objects):
+    if obj.type == 'MESH' and not obj.data.materials:
+        log("removing junk mesh:", obj.name)
+        bpy.data.objects.remove(obj, do_unlink=True)
+
+# Rig the child meshes (clothes/hair/eyes/teeth). CRITICAL: MakeHuman assets bind to the
+# BASEMESH (mhclo vertex mapping), not to bones — they carry no bone vertex groups of their
+# own, so an armature modifier alone exports them as STATIC meshes (the glTF exporter skips
+# the skin). That was the invisible root defect behind every in-app mangling: TalkingHead
+# posed the skinned body while clothes/hair/eyes stayed frozen at rest. Transfer the body's
+# bone weights onto each child (nearest-face interpolation), THEN add the modifier.
+children = [o for o in bpy.data.objects if o.type == 'MESH' and o is not basemesh]
+for obj in children:
+    bpy.ops.object.select_all(action='DESELECT')
+    obj.select_set(True)
+    basemesh.select_set(True)
+    bpy.context.view_layer.objects.active = basemesh
+    bpy.ops.object.data_transfer(
+        use_create=True,
+        data_type='VGROUP_WEIGHTS',
+        layers_select_src='ALL',
+        layers_select_dst='NAME',
+        vert_mapping='POLYINTERP_NEAREST',
+    )
+    RigService.ensure_armature_modifier(obj, armature)
+    if obj.parent is None or obj.parent is basemesh:
+        obj.parent = armature
+log("child meshes rigged (weights transferred):", [o.name for o in children])
+
+# ---- 3) ARKit + Oculus viseme shape keys ----------------------------------------------------
+import bl_ext.blender_org.mpfb as mpfb_module
+face_meshes = [basemesh]
+log("building ARKit + viseme targets (this is the slow step)")
+th["build_targets"](mpfb_module, face_meshes, VENDOR / "talkinghead-targets.zip")
+log("targets built:", len(basemesh.data.shape_keys.key_blocks) if basemesh.data.shape_keys else 0, "shape keys")
+
+# ---- 4) Bake helpers/masks away while keeping shape keys ------------------------------------
+bpy.ops.object.select_all(action='DESELECT')
+basemesh.select_set(True)
+bpy.context.view_layer.objects.active = basemesh
+
+# Head/body detail: one subdivision level on the basemesh, baked WITH the shape keys by the
+# same duplicate-per-key delta strategy MPFB's own exporter uses (th apply_modifiers accepts
+# any modifier names). 19k → ~76k verts; sparse morph storage in make.sh keeps the size sane.
+# Config `subdiv: false` opts out.
+if CFG.get("subdiv", True):
+    sub = basemesh.modifiers.new("Subdivision", 'SUBSURF')
+    sub.levels = 1
+    sub.render_levels = 1
+
+mods = th["find_modifier_names"](basemesh, ["delete", "hide helpers", "subdivision"])
+if mods:
+    log("applying modifiers with shape keys:", mods)
+    th["apply_modifiers"](bpy.context, mods)
+    log("post-bake verts:", len(basemesh.data.vertices))
+
+# ---- 5) Scale to meters + A-pose bone axes --------------------------------------------------
+bpy.ops.object.select_all(action='DESELECT')
+armature.select_set(True)
+bpy.context.view_layer.objects.active = armature
+th["scale_character"]([armature], "Hips", CFG.get("hips_height", 1.0))
+th["fix_bone_axes"]([armature], th["BONE_AXES_DATA_A"])
+log("scaled + bone axes fixed")
+
+# Consistent outward normals on every mesh. The MPFB bake pipeline leaves patches of
+# inward-facing normals; double-sided BLEND materials masked it, but with proper OPAQUE +
+# backface culling those patches literally cull away (the face disappeared) and lighting
+# was shading them dark all along. Recalc is safe with shape keys (normals aren't per-key,
+# and morph normals aren't exported).
+for obj in bpy.data.objects:
+    if obj.type != 'MESH':
+        continue
+    bpy.ops.object.select_all(action='DESELECT')
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.mesh.normals_make_consistent(inside=False)
+    bpy.ops.object.mode_set(mode='OBJECT')
+log("normals recalculated outward")
+
+# Root must be named "Armature" for TalkingHead.
+armature.name = "Armature"
+
+# Apply all transforms everywhere.
+bpy.ops.object.select_all(action='SELECT')
+bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+
+# ---- 6) glTF-safe materials ------------------------------------------------------------------
+# The exporter derives alphaMode from the NODE GRAPH, not from material.blend_method (which
+# Blender 4.5 deprecated — an earlier version of this pass set it and every material still
+# exported as alphaMode BLEND + doubleSided, which renders in three.js as sorting artifacts,
+# milky faces and blank-looking eyes). The real fix, per TalkingHead's MPFB.md:
+#   OPAQUE  (skin/clothes/teeth/eyes): unlink whatever feeds Principled Alpha, force Alpha=1
+#           → exporter writes alphaMode OPAQUE; backface culling → doubleSided false.
+#   MASK    (hair/eyebrows/eyelashes): insert Math(GREATER_THAN, threshold) before Alpha
+#           → exporter writes alphaMode MASK (alpha-clip cutout); keep doubleSided.
+# Classify by the CONFIG's asset slugs, not by name guessing — the material is named after
+# the asset folder (coach-male.short02), which says nothing about being hair.
+def slug_of(fragment):
+    return Path(fragment).stem.lower() if fragment else None
+
+CUTOUT_SLUGS = tuple(s for s in (slug_of(CFG.get(k)) for k in ('hair', 'eyebrows', 'eyelashes')) if s)
+EYE_SLUG = slug_of(CFG.get('eyes', 'low-poly/low-poly.mhclo'))
+
+def principled_of(mat):
+    for n in mat.node_tree.nodes:
+        if n.type == 'BSDF_PRINCIPLED':
+            return n
+    return None
+
+for mat in bpy.data.materials:
+    if not mat.use_nodes:
+        continue
+    bsdf = principled_of(mat)
+    if not bsdf:
+        continue
+    lname = mat.name.lower()
+    alpha_in = bsdf.inputs.get('Alpha')
+
+    if any(s in lname for s in CUTOUT_SLUGS):
+        # Cutout: route the existing alpha source through a hard threshold.
+        if alpha_in and alpha_in.links:
+            src = alpha_in.links[0].from_socket
+            gt = mat.node_tree.nodes.new('ShaderNodeMath')
+            gt.operation = 'GREATER_THAN'
+            gt.inputs[1].default_value = 0.4
+            mat.node_tree.links.remove(alpha_in.links[0])
+            mat.node_tree.links.new(src, gt.inputs[0])
+            mat.node_tree.links.new(gt.outputs[0], alpha_in)
+        mat.use_backface_culling = False        # hair cards need both sides
+    else:
+        # Opaque: sever every alpha path so the exporter can't infer BLEND.
+        if alpha_in:
+            for link in list(alpha_in.links):
+                mat.node_tree.links.remove(link)
+            alpha_in.default_value = 1.0
+        mat.use_backface_culling = True         # exports doubleSided: false
+
+    if EYE_SLUG and EYE_SLUG in lname:
+        # Wet-glint eyes: low roughness + a clearcoat layer (the iris texture is already
+        # wired; the old dull/milky look was BLEND + roughness 0.7).
+        r = bsdf.inputs.get('Roughness')
+        if r:
+            r.default_value = 0.15
+        cc = bsdf.inputs.get('Coat Weight') or bsdf.inputs.get('Clearcoat')
+        if cc and not cc.links:
+            cc.default_value = 0.5
+    elif 'body' in lname or '.body' in lname or 'skin' in lname or CFG['name'] + '.body' == mat.name.lower():
+        r = bsdf.inputs.get('Roughness')
+        if r and not r.links:
+            r.default_value = 0.5               # diffuse-only skin: realism lives in roughness
+log("materials normalized (node-level alpha, 4.5-safe)")
+
+# ---- 7) Export GLB ---------------------------------------------------------------------------
+bpy.ops.object.select_all(action='SELECT')
+OUT_GLB.parent.mkdir(parents=True, exist_ok=True)
+bpy.ops.export_scene.gltf(
+    filepath=str(OUT_GLB),
+    export_format='GLB',
+    use_selection=True,
+    export_animations=False,
+    export_skins=True,
+    export_morph=True,
+    export_morph_normal=False,     # halves morph payload; TalkingHead doesn't need morph normals
+    export_yup=True,
+    export_apply=False,            # NEVER bake modifiers here — it would drop the shape keys
+    export_image_format='AUTO',
+)
+log("exported", OUT_GLB, f"{OUT_GLB.stat().st_size/1e6:.1f} MB")
+
+# ---- 8) Optional preview render --------------------------------------------------------------
+if PREVIEW:
+    scene = bpy.context.scene
+    cam = bpy.data.objects.new("cam", bpy.data.cameras.new("cam"))
+    scene.collection.objects.link(cam)
+    cam.location = (0.55, -3.4, 1.05)
+    cam.rotation_euler = (math.radians(87), 0, math.radians(9))
+    scene.camera = cam
+    sun = bpy.data.objects.new("sun", bpy.data.lights.new("sun", 'SUN'))
+    scene.collection.objects.link(sun)
+    sun.rotation_euler = (math.radians(55), 0, math.radians(25))
+    sun.data.energy = 3.5
+    scene.render.engine = 'BLENDER_EEVEE_NEXT'
+    scene.render.resolution_x = 540
+    scene.render.resolution_y = 960
+    scene.render.filepath = str(PREVIEW)
+    bpy.ops.render.render(write_still=True)
+    log("preview", PREVIEW)
+
+log("DONE")

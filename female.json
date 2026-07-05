@@ -1,0 +1,73 @@
+{
+  "name": "coach-female",
+  "phenotype": {
+    "gender": 0.0,
+    "age": 0.4,
+    "muscle": 0.75,
+    "weight": 0.45,
+    "proportions": 0.8,
+    "height": 0.62,
+    "cupsize": 0.45,
+    "firmness": 0.7,
+    "race": {
+      "asian": 0.35,
+      "african": 0.05,
+      "caucasian": 0.6
+    }
+  },
+  "targets": [
+    {
+      "target": "torso-vshape-incr",
+      "value": 0.35
+    },
+    {
+      "target": "stomach-tone-incr",
+      "value": 0.9
+    },
+    {
+      "target": "l-upperarm-muscle-incr",
+      "value": 0.5
+    },
+    {
+      "target": "r-upperarm-muscle-incr",
+      "value": 0.5
+    },
+    {
+      "target": "l-upperarm-shoulder-muscle-incr",
+      "value": 0.45
+    },
+    {
+      "target": "r-upperarm-shoulder-muscle-incr",
+      "value": 0.45
+    },
+    {
+      "target": "measure-waist-circ-decr",
+      "value": 0.4
+    }
+  ],
+  "skin": "cutoff3d_indian_female_enhanced/cutoff3d_indian_female_enhanced.mhmat",
+  "eyes": "low-poly/low-poly.mhclo",
+  "teeth": "teeth_base/teeth_base.mhclo",
+  "tongue": "tongue01/tongue01.mhclo",
+  "eyebrows": "eyebrow001/eyebrow001.mhclo",
+  "eyelashes": "eyelashes02/eyelashes02.mhclo",
+  "hair": "braid01/braid01.mhclo",
+  "clothes": [
+    "female_sportsuit01/female_sportsuit01.mhclo",
+    "punkduck_comfortable_sneakers/punkduck_comfortable_sneakers.mhclo"
+  ],
+  "hips_height": 0.94,
+  "texture_edits": {
+    "indian_skin3e": {
+      "source": "skins/cutoff3d_indian_female_enhanced/indian_skin3e.png",
+      "tint": {
+        "rgb": [
+          158,
+          108,
+          74
+        ],
+        "strength": 0.75
+      }
+    }
+  }
+}
