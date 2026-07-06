@@ -37,8 +37,11 @@
   .cta { display:inline-block; margin-top:28px; padding:14px 32px; border-radius:16px; background:#6473f2;
          color:#fff; font-weight:700; text-decoration:none; box-shadow:0 12px 40px rgba(100,115,242,.35); }
   .cta.ghost { background:transparent; border:1px solid rgba(255,255,255,.15); box-shadow:none; margin-left:10px; }
-  section { padding:44px 0; }
-  h2 { font-size:1.5rem; margin-bottom:16px; }
+  section { padding:56px 0 20px; }
+  section + section { border-top:1px solid rgba(255,255,255,.05); margin-top:36px; }
+  h2 { font-size:1.6rem; margin-bottom:20px; }
+  .caption { margin-top:14px; text-align:center; font-size:.85rem; color:var(--dim); }
+  .caption code { color:var(--accent); }
   .grid { display:grid; gap:16px; }
   @media(min-width:700px){ .grid.cols3{ grid-template-columns:repeat(3,1fr);} .grid.cols2{ grid-template-columns:repeat(2,1fr);} }
   .card { background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.09); border-radius:18px; padding:20px; }
@@ -48,7 +51,7 @@
         overflow-x:auto; font-size:.85rem; line-height:1.5; color:#c9d2f0; }
   code.k { color:var(--accent); }
   .shot { width:100%; border-radius:18px; border:1px solid rgba(255,255,255,.1); }
-  footer { border-top:1px solid rgba(255,255,255,.07); padding:36px 0; text-align:center; font-size:.8rem; color:var(--dim); }
+  footer { border-top:1px solid rgba(255,255,255,.07); margin-top:56px; padding:44px 0; text-align:center; font-size:.8rem; color:var(--dim); }
   footer a { color:var(--brand); text-decoration:none; }
 </style>
 </head>
@@ -58,20 +61,21 @@
   <div class="wrap">
     <h1>Avatar Factory<br><span>JSON in. 3D coach out.</span></h1>
     <p class="sub">An open-source, fully headless avatar generator: Blender + MPFB scripted end-to-end.
-    Physique, face, outfit, skin tone — even the print on the t-shirt — are a config file.
+    Physique, face, outfit, skin tone — even the print on the t-shirt — it’s all one config file.
     Output: rigged, lip-sync-ready GLB, ~5&nbsp;MB, yours to ship.</p>
     <a class="cta" href="https://github.com/GauravJiandaniGJ/avatar-factory">Get it on GitHub</a>
     <a class="cta ghost" href="#quickstart">Quickstart</a>
   </div>
 </header>
 
-<section class="wrap">
-  <img class="shot" src="og-image.png" alt="A generated bodybuilder coach avatar next to the Avatar Factory wordmark">
+<section class="wrap" style="padding-top:8px">
+  <img class="shot" src="avatars.png" alt="Three generated coaches — two bodybuilders and an athlete — each from its own JSON config">
+  <p class="caption">One tool, three configs, three people. Copy a JSON file, change the sliders, run <code>make.sh</code>.</p>
 </section>
 
 <section class="wrap">
   <h2>Why it exists</h2>
-  <p style="color:var(--dim); max-width:640px">Ready Player Me shut down in January 2026 and took thousands of
+  <p style="color:var(--dim); max-width:640px; line-height:1.75">Ready Player Me shut down in January 2026 and took thousands of
   apps' avatar pipelines with it. Avatar Factory is the un-shut-downable answer: everything runs on your
   machine from open parts — Blender, the MPFB human generator, CC0 asset packs, and the MIT rig files from
   the TalkingHead project. No API keys, no per-avatar fees, no vendor.</p>
