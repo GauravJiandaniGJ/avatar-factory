@@ -43,13 +43,41 @@
     {
       "target": "measure-waist-circ-decr",
       "value": 0.4
+    },
+    {
+      "target": "l-eye-scale-incr",
+      "value": 0.12
+    },
+    {
+      "target": "r-eye-scale-incr",
+      "value": 0.12
+    },
+    {
+      "target": "mouth-upperlip-volume-incr",
+      "value": 0.35
+    },
+    {
+      "target": "mouth-lowerlip-volume-incr",
+      "value": 0.3
+    },
+    {
+      "target": "mouth-cupidsbow-incr",
+      "value": 0.3
+    },
+    {
+      "target": "nose-scale-horiz-decr",
+      "value": 0.2
+    },
+    {
+      "target": "chin-width-decr",
+      "value": 0.2
     }
   ],
   "skin": "cutoff3d_indian_female_enhanced/cutoff3d_indian_female_enhanced.mhmat",
-  "eyes": "low-poly/low-poly.mhclo",
+  "eyes": "high-poly/high-poly.mhclo",
   "teeth": "teeth_base/teeth_base.mhclo",
   "tongue": "tongue01/tongue01.mhclo",
-  "eyebrows": "eyebrow001/eyebrow001.mhclo",
+  "eyebrows": "mindfront_eyebrows_01/mindfront_eyebrows_01.mhclo",
   "eyelashes": "eyelashes02/eyelashes02.mhclo",
   "hair": "braid01/braid01.mhclo",
   "clothes": [
@@ -67,7 +95,22 @@
           74
         ],
         "strength": 0.75
+      },
+      "normal": {
+        "strength": 1.6
+      }
+    },
+    "braid01_diffuse": {
+      "source": "hair/braid01/braid01_diffuse.png",
+      "tint": {
+        "rgb": [
+          40,
+          33,
+          30
+        ],
+        "strength": 0.75
       }
     }
-  }
+  },
+  "subdiv": false
 }

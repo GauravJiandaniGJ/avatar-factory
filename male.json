@@ -83,13 +83,45 @@
     {
       "target": "r-cheek-bones-incr",
       "value": 0.35
+    },
+    {
+      "target": "nose-scale-depth-incr",
+      "value": 0.3
+    },
+    {
+      "target": "nose-greek-incr",
+      "value": 0.2
+    },
+    {
+      "target": "nose-scale-vert-incr",
+      "value": 0.15
+    },
+    {
+      "target": "mouth-upperlip-volume-incr",
+      "value": 0.2
+    },
+    {
+      "target": "mouth-lowerlip-volume-incr",
+      "value": 0.25
+    },
+    {
+      "target": "forehead-trans-forward",
+      "value": 0.25
+    },
+    {
+      "target": "l-eye-scale-incr",
+      "value": 0.15
+    },
+    {
+      "target": "r-eye-scale-incr",
+      "value": 0.15
     }
   ],
   "skin": "toigo_light_skin_male_bronze/toigo_light_skin_male_bronze.mhmat",
-  "eyes": "low-poly/low-poly.mhclo",
+  "eyes": "high-poly/high-poly.mhclo",
   "teeth": "teeth_base/teeth_base.mhclo",
   "tongue": "tongue01/tongue01.mhclo",
-  "eyebrows": "eyebrow006/eyebrow006.mhclo",
+  "eyebrows": "eyebrow011/eyebrow011.mhclo",
   "hair": "short01/short01.mhclo",
   "clothes": [
     "elvs_crude_t-shirt_male/elvs_crude_t-shirt_male.mhclo",
@@ -125,7 +157,22 @@
           68
         ],
         "strength": 0.8
+      },
+      "normal": {
+        "strength": 1.6
+      }
+    },
+    "short01_diffuse": {
+      "source": "hair/short01/short01_diffuse.png",
+      "tint": {
+        "rgb": [
+          38,
+          32,
+          28
+        ],
+        "strength": 0.9
       }
     }
-  }
+  },
+  "subdiv": false
 }

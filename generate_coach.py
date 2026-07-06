@@ -95,17 +95,52 @@ log("phenotype flattened into basis; shape keys now:",
     len(basemesh.data.shape_keys.key_blocks) if basemesh.data.shape_keys else 0)
 
 # Texture overrides from the prepare_textures.py pre-step (brand print, skin tint): repoint
-# the matching Blender images at the edited copies so they embed into the GLB.
+# the matching Blender images at the edited copies so they embed into the GLB. Entries named
+# <image>__normal are DERIVED NORMAL MAPS — wired below into whichever material uses <image>
+# as its base color (the skin realism pass; MakeHuman skins ship diffuse-only).
 overrides_path = Path(__file__).parent / "out" / "tex" / f"{CFG['name']}.overrides.json"
+normal_maps = {}
 if overrides_path.exists():
     overrides = json.loads(overrides_path.read_text())
-    for img in bpy.data.images:
-        stem = Path(img.filepath).stem if img.filepath else img.name
-        for key, path in overrides.items():
+    for key, path in overrides.items():
+        if key.endswith('__normal'):
+            normal_maps[key[:-len('__normal')]] = path
+            continue
+        for img in bpy.data.images:
+            stem = Path(img.filepath).stem if img.filepath else img.name
             if key == stem or key == img.name:
                 img.filepath = path
                 img.reload()
                 log("texture override:", key, "→", Path(path).name)
+
+def wire_normal_maps():
+    """Attach derived normal maps: find the material whose Base Color image matches the
+    manifest key, add Image Texture (Non-Color) → Normal Map → BSDF Normal. Runs after
+    materials exist; the glTF exporter turns this into normalTexture."""
+    for base_key, npath in normal_maps.items():
+        for mat in bpy.data.materials:
+            if not mat.use_nodes:
+                continue
+            bsdf = next((n for n in mat.node_tree.nodes if n.type == 'BSDF_PRINCIPLED'), None)
+            if not bsdf:
+                continue
+            base_in = bsdf.inputs.get('Base Color')
+            if not (base_in and base_in.links):
+                continue
+            src_node = base_in.links[0].from_node
+            img = getattr(src_node, 'image', None)
+            stem = Path(img.filepath).stem if (img and img.filepath) else (img.name if img else '')
+            if stem != base_key and (img and img.name) != base_key:
+                continue
+            nimg = bpy.data.images.load(npath)
+            nimg.colorspace_settings.name = 'Non-Color'
+            tex = mat.node_tree.nodes.new('ShaderNodeTexImage')
+            tex.image = nimg
+            nm = mat.node_tree.nodes.new('ShaderNodeNormalMap')
+            nm.inputs['Strength'].default_value = 1.0
+            mat.node_tree.links.new(tex.outputs['Color'], nm.inputs['Color'])
+            mat.node_tree.links.new(nm.outputs['Normal'], bsdf.inputs['Normal'])
+            log("normal map wired:", base_key, "→", mat.name)
 
 # ---- 2) TalkingHead rig + weights -----------------------------------------------------------
 log("loading talkinghead rig")
@@ -166,11 +201,12 @@ bpy.ops.object.select_all(action='DESELECT')
 basemesh.select_set(True)
 bpy.context.view_layer.objects.active = basemesh
 
-# Head/body detail: one subdivision level on the basemesh, baked WITH the shape keys by the
-# same duplicate-per-key delta strategy MPFB's own exporter uses (th apply_modifiers accepts
-# any modifier names). 19k → ~76k verts; sparse morph storage in make.sh keeps the size sane.
-# Config `subdiv: false` opts out.
-if CFG.get("subdiv", True):
+# OPTIONAL head/body subdivision, default OFF. The bake preserves shape keys and renders
+# correctly in Blender, but the subdivided morphs come out ~5x WEAKER through the
+# three.js/TalkingHead pipeline (measured in-app: talking/idle motion 1.1x vs 3.8x
+# without subdiv) — visible lip-sync beats mesh density, and the derived normal maps
+# carry the surface detail subdiv was for. Enable per-config only with in-app verification.
+if CFG.get("subdiv", False):
     sub = basemesh.modifiers.new("Subdivision", 'SUBSURF')
     sub.levels = 1
     sub.render_levels = 1
@@ -244,8 +280,15 @@ for mat in bpy.data.materials:
         continue
     lname = mat.name.lower()
     alpha_in = bsdf.inputs.get('Alpha')
+    is_eye = bool(EYE_SLUG and EYE_SLUG in lname)
 
-    if any(s in lname for s in CUTOUT_SLUGS):
+    if is_eye:
+        # High-poly eyes are TWO-layer: a transparent cornea shell over the iris ball, split
+        # by the texture's alpha. Severing alpha (the opaque pass) turns the shell opaque
+        # white and blanks the eye — keep the alpha link so the exporter emits BLEND for
+        # this one small contained mesh.
+        pass
+    elif any(s in lname for s in CUTOUT_SLUGS):
         # Cutout: route the existing alpha source through a hard threshold.
         if alpha_in and alpha_in.links:
             src = alpha_in.links[0].from_socket
@@ -256,6 +299,11 @@ for mat in bpy.data.materials:
             mat.node_tree.links.new(src, gt.inputs[0])
             mat.node_tree.links.new(gt.outputs[0], alpha_in)
         mat.use_backface_culling = False        # hair cards need both sides
+        # Flat hair cards at default roughness mirror the lights as a gray sheen that
+        # washes out even a near-black diffuse — matte them.
+        r = bsdf.inputs.get('Roughness')
+        if r and not r.links:
+            r.default_value = 0.85
     else:
         # Opaque: sever every alpha path so the exporter can't infer BLEND.
         if alpha_in:
@@ -264,7 +312,7 @@ for mat in bpy.data.materials:
             alpha_in.default_value = 1.0
         mat.use_backface_culling = True         # exports doubleSided: false
 
-    if EYE_SLUG and EYE_SLUG in lname:
+    if is_eye:
         # Wet-glint eyes: low roughness + a clearcoat layer (the iris texture is already
         # wired; the old dull/milky look was BLEND + roughness 0.7).
         r = bsdf.inputs.get('Roughness')
@@ -278,6 +326,7 @@ for mat in bpy.data.materials:
         if r and not r.links:
             r.default_value = 0.5               # diffuse-only skin: realism lives in roughness
 log("materials normalized (node-level alpha, 4.5-safe)")
+wire_normal_maps()
 
 # ---- 7) Export GLB ---------------------------------------------------------------------------
 bpy.ops.object.select_all(action='SELECT')
