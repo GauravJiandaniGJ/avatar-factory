@@ -37,12 +37,11 @@ build() {
   # universally supported by three.js/browsers this app targets.
   $GLTF webp "$out" "$out" 2>&1 | tail -1
 
-  echo "== [$sex] geometry compression =="
-  # ORDER IS LOAD-BEARING: quantize FIRST (16-bit vertex data, KHR_mesh_quantization —
-  # native in three.js, NOT draco), sparse LAST. Quantize rewrites accessors densely, so
-  # running it after sparse silently un-sparses 66 morphs and TRIPLES the file.
-  $GLTF quantize "$out" "$out" 2>&1 | tail -1
-  $GLTF sparse "$out" "$out" 2>&1 | tail -1
+  # NO geometry compression — hard-won lesson (gltf-transform 4.4.1):
+  #   - sparse AFTER quantize ZEROES every morph delta → the avatar loads, looks perfect,
+  #     and silently cannot lip-sync (shipped that way once; never again).
+  #   - quantize alone DE-SPARSIFIES Blender's native sparse morph export (22MB → 39MB).
+  # Blender already exports morphs sparsely; resize+webp above do the real shrinking.
   rm -f "$raw" "$sparse"
 
   echo "== [$sex] report =="
@@ -53,13 +52,25 @@ data = open(sys.argv[1], 'rb').read()
 jl, = struct.unpack('<I', data[12:16])
 doc = json.loads(data[20:20+jl])
 m0 = doc['meshes'][0]
+prim = m0['primitives'][0]
 names = m0.get('extras', {}).get('targetNames', [])
 unskinned = [n.get('name') for n in doc['nodes'] if 'mesh' in n and 'skin' not in n]
 macros = [n for n in names if n.startswith('$')]
 print(f"   morphs: {len(names)} | visemes: {sum(1 for n in names if n.startswith('viseme_'))} | jawOpen: {'jawOpen' in names}")
 print(f"   unskinned meshes: {unskinned or 'none'} | leftover macro keys: {macros or 'none'}")
-for im, bv in ((i, doc['bufferViews'][i['bufferView']]) for i in doc.get('images', [])):
-    pass
+
+# MORPH-LIVENESS GATE: a compressor once zeroed every delta while names/counts stayed
+# intact — the coach loaded fine and silently couldn't lip-sync. Assert jawOpen's
+# POSITION accessor has a real max displacement.
+idx = names.index('jawOpen') if 'jawOpen' in names else -1
+alive = False
+if idx >= 0:
+    acc = doc['accessors'][prim['targets'][idx]['POSITION']]
+    mx = max(abs(v) for v in (acc.get('max') or [0]))
+    alive = mx > 1e-4
+    print(f"   jawOpen max displacement: {mx:.5f} {'OK' if alive else '*** DEAD MORPHS ***'}")
+if not alive:
+    sys.exit("FATAL: morph deltas are zero — the avatar cannot lip-sync. Aborting.")
 PY
 }
 

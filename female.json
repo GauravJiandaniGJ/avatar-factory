@@ -111,5 +111,6 @@
         "strength": 0.75
       }
     }
-  }
+  },
+  "subdiv": false
 }

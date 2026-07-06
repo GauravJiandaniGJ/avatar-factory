@@ -173,5 +173,6 @@
         "strength": 0.9
       }
     }
-  }
+  },
+  "subdiv": false
 }

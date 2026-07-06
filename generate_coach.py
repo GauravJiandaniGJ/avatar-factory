@@ -201,11 +201,12 @@ bpy.ops.object.select_all(action='DESELECT')
 basemesh.select_set(True)
 bpy.context.view_layer.objects.active = basemesh
 
-# Head/body detail: one subdivision level on the basemesh, baked WITH the shape keys by the
-# same duplicate-per-key delta strategy MPFB's own exporter uses (th apply_modifiers accepts
-# any modifier names). 19k → ~76k verts; sparse morph storage in make.sh keeps the size sane.
-# Config `subdiv: false` opts out.
-if CFG.get("subdiv", True):
+# OPTIONAL head/body subdivision, default OFF. The bake preserves shape keys and renders
+# correctly in Blender, but the subdivided morphs come out ~5x WEAKER through the
+# three.js/TalkingHead pipeline (measured in-app: talking/idle motion 1.1x vs 3.8x
+# without subdiv) — visible lip-sync beats mesh density, and the derived normal maps
+# carry the surface detail subdiv was for. Enable per-config only with in-app verification.
+if CFG.get("subdiv", False):
     sub = basemesh.modifiers.new("Subdivision", 'SUBSURF')
     sub.levels = 1
     sub.render_levels = 1
