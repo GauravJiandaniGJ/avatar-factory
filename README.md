@@ -8,8 +8,8 @@ Output GLBs are [TalkingHead](https://github.com/met4citizen/TalkingHead)-compat
 Mixamo rig, 52 ARKit face shapes + Oculus visemes (real-time lip-sync), ~5MB each,
 loadable by any three.js / glTF pipeline.
 
-Born as the coach generator for a fitness app after Ready Player Me shut down (Jan 2026);
-extracted because owning your avatar pipeline beats renting one.
+Born after Ready Player Me shut down (Jan 2026) took thousands of apps' avatar pipelines
+with it — owning your avatar pipeline beats renting one.
 
 ```
 ./setup.sh          # one-time: Blender + MPFB + asset packs (~600MB, macOS)
