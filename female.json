@@ -90,11 +90,11 @@
       "source": "skins/cutoff3d_indian_female_enhanced/indian_skin3e.png",
       "tint": {
         "rgb": [
-          158,
-          108,
-          74
+          210,
+          162,
+          126
         ],
-        "strength": 0.75
+        "strength": 0.45
       },
       "normal": {
         "strength": 1.6
