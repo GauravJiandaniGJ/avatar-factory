@@ -3,8 +3,8 @@
   "phenotype": {
     "gender": 1.0,
     "age": 0.38,
-    "muscle": 0.85,
-    "weight": 0.58,
+    "muscle": 1.0,
+    "weight": 0.55,
     "proportions": 0.8,
     "height": 0.72,
     "cupsize": 0.5,
@@ -18,51 +18,71 @@
   "targets": [
     {
       "target": "torso-vshape-incr",
-      "value": 0.7
+      "value": 0.9
     },
     {
       "target": "torso-muscle-pectoral-incr",
-      "value": 0.65
+      "value": 1.0
     },
     {
       "target": "torso-muscle-dorsi-incr",
-      "value": 0.6
+      "value": 0.9
     },
     {
       "target": "measure-shoulder-dist-incr",
-      "value": 0.4
+      "value": 0.7
     },
     {
       "target": "l-upperarm-muscle-incr",
-      "value": 0.65
+      "value": 1.0
     },
     {
       "target": "r-upperarm-muscle-incr",
-      "value": 0.65
+      "value": 1.0
     },
     {
       "target": "l-upperarm-shoulder-muscle-incr",
-      "value": 0.65
+      "value": 0.95
     },
     {
       "target": "r-upperarm-shoulder-muscle-incr",
-      "value": 0.65
+      "value": 0.95
     },
     {
       "target": "l-lowerarm-muscle-incr",
-      "value": 0.5
+      "value": 0.8
     },
     {
       "target": "r-lowerarm-muscle-incr",
-      "value": 0.5
+      "value": 0.8
     },
     {
       "target": "measure-upperarm-circ-incr",
-      "value": 0.3
+      "value": 0.65
     },
     {
       "target": "stomach-tone-incr",
-      "value": 0.9
+      "value": 1.0
+    },
+    {
+      "target": "measure-waist-circ-decr",
+      "value": 0.3
+    },
+    {
+      "target": "l-upperleg-muscle-incr",
+      "value": 0.7
+    },
+    {
+      "target": "r-upperleg-muscle-incr",
+      "value": 0.7
+    },
+    {
+      "target": "l-lowerleg-muscle-incr",
+      "value": 0.6
+    },
+    {
+      "target": "r-lowerleg-muscle-incr",
+      "value": 0.6
     },
     {
       "target": "chin-bones-incr",
@@ -126,7 +146,7 @@
     },
     {
       "target": "measure-neck-circ-incr",
-      "value": 0.45
+      "value": 0.65
     },
     {
       "target": "head-square",
@@ -140,28 +160,21 @@
   "eyebrows": "eyebrow011/eyebrow011.mhclo",
   "hair": "culturalibre_hair_02/culturalibre_hair_02.mhclo",
   "clothes": [
-    "elvs_crude_t-shirt_male/elvs_crude_t-shirt_male.mhclo",
-    "elvs_male_trouser_short_2/elvs_male_trouser_short_2.mhclo",
+    "mindfront_tank_top_01/mindfront_tank_top_01.mhclo",
+    "mindfront_male_swimming_trunks_01/mindfront_male_swimming_trunks_01.mhclo",
     "culturalibre_sneakers/culturalibre_sneakers.mhclo"
   ],
   "hips_height": 1.0,
   "texture_edits": {
-    "crude_male_tex": {
-      "source": "clothes/elvs_crude_t-shirt_male/crude_male_tex.png",
-      "print": {
-        "text": "COACH",
-        "box": [
-          180,
-          655,
-          370,
-          735
+    "M_Swimming_trunks_01": {
+      "source": "clothes/mindfront_male_swimming_trunks_01/M_Swimming_trunks_01.png",
+      "tint": {
+        "rgb": [
+          30,
+          32,
+          38
         ],
-        "fill": [
-          16,
-          24,
-          60
-        ],
-        "font_px": 44
+        "strength": 1.0
       }
     },
     "young_lightskinned_male_diffuse_Bronze": {
@@ -175,7 +188,33 @@
         "strength": 0.5
       },
       "normal": {
-        "strength": 1.6
+        "strength": 2.2
+      }
+    },
+    "Tank_Top_01": {
+      "source": "clothes/mindfront_tank_top_01/Tank_Top_01.png",
+      "tint": {
+        "rgb": [
+          64,
+          70,
+          92
+        ],
+        "strength": 0.9
+      },
+      "print": {
+        "text": "COACH",
+        "box": [
+          340,
+          640,
+          720,
+          760
+        ],
+        "fill": [
+          225,
+          228,
+          240
+        ],
+        "font_px": 86
       }
     }
   },

@@ -38,6 +38,7 @@ PACKS=(
   "hair01 cc0"
   "eyebrows01 cc0" "eyelashes01 cc0"
   "shirts01 cc0"
+  "shirts03 ccby"                  # male athletic tank (coach v2 top)
   "pants03 ccby" "shoes02 ccby"    # CC-BY: attribution required if shipped (see README)
 )
 TMP=$(mktemp -d)

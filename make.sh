@@ -30,7 +30,7 @@ build() {
   # Faces sell the avatar: skin stays at source resolution (2048-class).
   # Everything else gets budgeted: clothes/hair/eyes 1024, mouth interior + brows 512.
   $GLTF resize "$raw" "$out" --width 1024 --height 1024 \
-    --pattern "{crude_male_tex,shorttex*,sneaker*,short0*,ponytail*,braid*,bob0*,female_sportsuit*,punkduck*,brown_eye,*_eye*}" 2>&1 | tail -1
+    --pattern "{crude_male_tex,shorttex*,sneaker*,short0*,ponytail*,braid*,bob0*,female_sportsuit*,punkduck*,brown_eye,*_eye*,Tank_Top*,M_Swimming*}" 2>&1 | tail -1
   $GLTF resize "$out" "$out" --width 512 --height 512 \
     --pattern "{teeth*,tongue*,eyebrow*,eyelash*}" 2>&1 | tail -1
   # WebP re-encode: PNG diffuse maps are 3-4x larger for identical visual quality; webp is
