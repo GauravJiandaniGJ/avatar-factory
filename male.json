@@ -164,7 +164,7 @@
     "mindfront_male_swimming_trunks_01/mindfront_male_swimming_trunks_01.mhclo",
     "culturalibre_sneakers/culturalibre_sneakers.mhclo"
   ],
-  "hips_height": 1.0,
+  "hips_height": 0.95,
   "texture_edits": {
     "M_Swimming_trunks_01": {
       "source": "clothes/mindfront_male_swimming_trunks_01/M_Swimming_trunks_01.png",
