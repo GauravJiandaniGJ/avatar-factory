@@ -187,6 +187,52 @@ for obj in children:
     RigService.ensure_armature_modifier(obj, armature)
     if obj.parent is None or obj.parent is basemesh:
         obj.parent = armature
+
+    # The A-pose proximity transfer contaminates garments that pass near the RESTING
+    # HANDS (jean hips, jacket hems sit right next to them): those verts grab
+    # Hand/finger weights and the garment tears into shards the moment TalkingHead
+    # drops the arms to idle. No child asset should ever skin to hand bones — strip
+    # the groups and renormalize what remains (hip verts fall back to their real
+    # hip/leg weights, sleeve cuffs to the forearm).
+    hand_groups = [g for g in obj.vertex_groups if "Hand" in g.name]
+    if hand_groups:
+        n = len(hand_groups)
+        for g in hand_groups:
+            obj.vertex_groups.remove(g)
+        bpy.ops.object.select_all(action='DESELECT')
+        obj.select_set(True)
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.vertex_group_normalize_all(lock_active=False)
+        log("stripped hand/finger weights:", obj.name, f"({n} groups)")
+
+    # Same failure, second bone family: pants/waistband verts also grab Arm/ForeArm
+    # weights from the forearms hovering beside the hips, and shear sideways when the
+    # arms drop to idle. Sleeve CUFFS legitimately sit at hip HEIGHT in the A-pose
+    # though, so the strip needs height AND centerline distance — cuffs hang wide of
+    # the body and keep their arm weights. Thresholds derive from bone landmarks so
+    # they hold at any unit scale.
+    arm_groups = {g.index: g for g in obj.vertex_groups
+                  if any(k in g.name for k in ("Arm", "Shoulder"))}
+    if arm_groups and "Hips" in armature.data.bones and "Neck" in armature.data.bones:
+        hips_z = (armature.matrix_world @ armature.data.bones["Hips"].head_local).z
+        neck_z = (armature.matrix_world @ armature.data.bones["Neck"].head_local).z
+        upleg_x = abs((armature.matrix_world @ armature.data.bones["LeftUpLeg"].head_local).x)
+        z_cut = hips_z + 0.25 * (neck_z - hips_z)      # ~navel line
+        x_cut = 2.5 * max(upleg_x, 1e-6)               # ~just past the outer hip
+        mw = obj.matrix_world
+        strip = []
+        for v in obj.data.vertices:
+            co = mw @ v.co
+            if co.z < z_cut and abs(co.x) < x_cut and any(ge.group in arm_groups for ge in v.groups):
+                strip.append(v.index)
+        if strip:
+            for g in arm_groups.values():
+                g.remove(strip)
+            bpy.ops.object.select_all(action='DESELECT')
+            obj.select_set(True)
+            bpy.context.view_layer.objects.active = obj
+            bpy.ops.object.vertex_group_normalize_all(lock_active=False)
+            log("stripped arm weights from pants region:", obj.name, f"({len(strip)} verts)")
 log("child meshes rigged (weights transferred):", [o.name for o in children])
 
 # Some MakeHuman-community assets are absurdly dense (a plain elvs tank is 58k verts —
