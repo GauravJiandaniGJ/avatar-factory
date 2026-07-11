@@ -189,6 +189,23 @@ for obj in children:
         obj.parent = armature
 log("child meshes rigged (weights transferred):", [o.name for o in children])
 
+# Some MakeHuman-community assets are absurdly dense (a plain elvs tank is 58k verts —
+# ~2.8 MB of exported geometry, tripling the GLB). Budget every child mesh: anything over
+# CHILD_VERT_BUDGET collapses toward CHILD_VERT_TARGET. Plain cloth/hair survives this
+# visually untouched; the basemesh (the morph carrier) is never decimated.
+CHILD_VERT_BUDGET = 20000
+CHILD_VERT_TARGET = 8000
+for obj in children:
+    n = len(obj.data.vertices)
+    if n > CHILD_VERT_BUDGET:
+        dec = obj.modifiers.new("Decimate", 'DECIMATE')
+        dec.ratio = CHILD_VERT_TARGET / n
+        bpy.ops.object.select_all(action='DESELECT')
+        obj.select_set(True)
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.modifier_apply(modifier=dec.name)
+        log("decimated dense child:", obj.name, n, "→", len(obj.data.vertices), "verts")
+
 # ---- 3) ARKit + Oculus viseme shape keys ----------------------------------------------------
 import bl_ext.blender_org.mpfb as mpfb_module
 face_meshes = [basemesh]

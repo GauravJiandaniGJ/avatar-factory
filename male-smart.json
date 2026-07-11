@@ -1,0 +1,73 @@
+{
+  "name": "coach-male-smart",
+  "phenotype": {
+    "gender": 1.0,
+    "age": 0.45,
+    "muscle": 0.68,
+    "weight": 0.5,
+    "proportions": 0.8,
+    "height": 0.7,
+    "cupsize": 0.5,
+    "firmness": 0.5,
+    "race": {
+      "asian": 0.45,
+      "african": 0.1,
+      "caucasian": 0.45
+    }
+  },
+  "targets": [
+    { "target": "torso-vshape-incr", "value": 0.5 },
+    { "target": "torso-muscle-pectoral-incr", "value": 0.5 },
+    { "target": "torso-muscle-dorsi-incr", "value": 0.4 },
+    { "target": "measure-shoulder-dist-incr", "value": 0.4 },
+    { "target": "l-upperarm-muscle-incr", "value": 0.5 },
+    { "target": "r-upperarm-muscle-incr", "value": 0.5 },
+    { "target": "l-upperarm-shoulder-muscle-incr", "value": 0.4 },
+    { "target": "r-upperarm-shoulder-muscle-incr", "value": 0.4 },
+    { "target": "stomach-tone-incr", "value": 0.8 },
+    { "target": "measure-waist-circ-decr", "value": 0.25 },
+    { "target": "chin-bones-incr", "value": 0.55 },
+    { "target": "chin-width-incr", "value": 0.3 },
+    { "target": "l-cheek-bones-incr", "value": 0.35 },
+    { "target": "r-cheek-bones-incr", "value": 0.35 },
+    { "target": "nose-scale-depth-incr", "value": 0.25 },
+    { "target": "nose-scale-vert-incr", "value": 0.1 },
+    { "target": "mouth-upperlip-volume-incr", "value": 0.2 },
+    { "target": "mouth-lowerlip-volume-incr", "value": 0.2 },
+    { "target": "forehead-trans-forward", "value": 0.2 },
+    { "target": "l-eye-scale-incr", "value": 0.1 },
+    { "target": "r-eye-scale-incr", "value": 0.1 },
+    { "target": "measure-neck-circ-incr", "value": 0.35 }
+  ],
+  "skin": "toigo_light_skin_male_bronze/toigo_light_skin_male_bronze.mhmat",
+  "eyes": "high-poly/high-poly.mhclo",
+  "teeth": "teeth_base/teeth_base.mhclo",
+  "tongue": "tongue01/tongue01.mhclo",
+  "eyebrows": "eyebrow011/eyebrow011.mhclo",
+  "hair": "short02/short02.mhclo",
+  "clothes": [
+    "male_casualsuit01/male_casualsuit01.mhclo",
+    "mindfront_shoes_oxford_male/mindfront_shoes_oxford_male.mhclo"
+  ],
+  "hips_height": 0.95,
+  "texture_edits": {
+    "young_lightskinned_male_diffuse_Bronze": {
+      "source": "skins/toigo_light_skin_male_bronze/young_lightskinned_male_diffuse_Bronze.png",
+      "tint": {
+        "rgb": [222, 178, 140],
+        "strength": 0.5
+      },
+      "normal": {
+        "strength": 2.0
+      }
+    },
+    "short02_diffuse": {
+      "source": "hair/short02/short02_diffuse.png",
+      "tint": {
+        "rgb": [36, 30, 27],
+        "strength": 0.7
+      }
+    }
+  },
+  "subdiv": false
+}

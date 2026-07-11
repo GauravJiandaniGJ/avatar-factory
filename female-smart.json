@@ -1,0 +1,63 @@
+{
+  "name": "coach-female-smart",
+  "phenotype": {
+    "gender": 0.0,
+    "age": 0.42,
+    "muscle": 0.5,
+    "weight": 0.45,
+    "proportions": 0.75,
+    "height": 0.6,
+    "cupsize": 0.45,
+    "firmness": 0.65,
+    "race": {
+      "asian": 0.45,
+      "african": 0.15,
+      "caucasian": 0.4
+    }
+  },
+  "targets": [
+    { "target": "stomach-tone-incr", "value": 0.6 },
+    { "target": "measure-waist-circ-decr", "value": 0.3 },
+    { "target": "l-eye-scale-incr", "value": 0.12 },
+    { "target": "r-eye-scale-incr", "value": 0.12 },
+    { "target": "mouth-upperlip-volume-incr", "value": 0.35 },
+    { "target": "mouth-lowerlip-volume-incr", "value": 0.3 },
+    { "target": "mouth-cupidsbow-incr", "value": 0.3 },
+    { "target": "nose-scale-horiz-decr", "value": 0.15 },
+    { "target": "chin-width-decr", "value": 0.2 },
+    { "target": "l-cheek-bones-incr", "value": 0.3 },
+    { "target": "r-cheek-bones-incr", "value": 0.3 }
+  ],
+  "skin": "cutoff3d_indian_female_skin/cutoff3d_indian_female_skin.mhmat",
+  "eyes": "high-poly/high-poly.mhclo",
+  "teeth": "teeth_base/teeth_base.mhclo",
+  "tongue": "tongue01/tongue01.mhclo",
+  "eyebrows": "mindfront_eyebrows_01/mindfront_eyebrows_01.mhclo",
+  "eyelashes": "eyelashes02/eyelashes02.mhclo",
+  "hair": "toigo_blunt_bob/toigo_blunt_bob.mhclo",
+  "clothes": [
+    "female_elegantsuit01/female_elegantsuit01.mhclo",
+    "dressupdoc_balletflat1/dressupdoc_balletflat1.mhclo"
+  ],
+  "hips_height": 0.94,
+  "texture_edits": {
+    "indian_skin2e": {
+      "source": "skins/cutoff3d_indian_female_skin/indian_skin2e.png",
+      "tint": {
+        "rgb": [168, 118, 88],
+        "strength": 0.55
+      },
+      "normal": {
+        "strength": 1.6
+      }
+    },
+    "StrawberryBlondHair": {
+      "source": "hair/toigo_blunt_bob/StrawberryBlondHair.png",
+      "tint": {
+        "rgb": [32, 27, 25],
+        "strength": 0.92
+      }
+    }
+  },
+  "subdiv": false
+}

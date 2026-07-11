@@ -1,0 +1,95 @@
+{
+  "name": "coach-male-athletic",
+  "phenotype": {
+    "gender": 1.0,
+    "age": 0.33,
+    "muscle": 0.95,
+    "weight": 0.55,
+    "proportions": 0.8,
+    "height": 0.72,
+    "cupsize": 0.5,
+    "firmness": 0.5,
+    "race": {
+      "asian": 0.5,
+      "african": 0.2,
+      "caucasian": 0.3
+    }
+  },
+  "targets": [
+    { "target": "torso-vshape-incr", "value": 0.9 },
+    { "target": "torso-muscle-pectoral-incr", "value": 0.9 },
+    { "target": "torso-muscle-dorsi-incr", "value": 0.85 },
+    { "target": "measure-shoulder-dist-incr", "value": 0.7 },
+    { "target": "l-upperarm-muscle-incr", "value": 0.9 },
+    { "target": "r-upperarm-muscle-incr", "value": 0.9 },
+    { "target": "l-upperarm-shoulder-muscle-incr", "value": 0.85 },
+    { "target": "r-upperarm-shoulder-muscle-incr", "value": 0.85 },
+    { "target": "l-lowerarm-muscle-incr", "value": 0.7 },
+    { "target": "r-lowerarm-muscle-incr", "value": 0.7 },
+    { "target": "measure-upperarm-circ-incr", "value": 0.55 },
+    { "target": "stomach-tone-incr", "value": 1.0 },
+    { "target": "measure-waist-circ-decr", "value": 0.35 },
+    { "target": "l-upperleg-muscle-incr", "value": 0.7 },
+    { "target": "r-upperleg-muscle-incr", "value": 0.7 },
+    { "target": "l-lowerleg-muscle-incr", "value": 0.6 },
+    { "target": "r-lowerleg-muscle-incr", "value": 0.6 },
+    { "target": "chin-bones-incr", "value": 0.75 },
+    { "target": "chin-width-incr", "value": 0.5 },
+    { "target": "chin-prominent-incr", "value": 0.3 },
+    { "target": "l-cheek-bones-incr", "value": 0.5 },
+    { "target": "r-cheek-bones-incr", "value": 0.5 },
+    { "target": "l-cheek-volume-incr", "value": 0.2 },
+    { "target": "r-cheek-volume-incr", "value": 0.2 },
+    { "target": "nose-scale-depth-incr", "value": 0.35 },
+    { "target": "nose-greek-incr", "value": 0.2 },
+    { "target": "forehead-trans-forward", "value": 0.25 },
+    { "target": "measure-neck-circ-incr", "value": 0.6 },
+    { "target": "head-square", "value": 0.35 }
+  ],
+  "skin": "toigo_light_skin_male_bronze/toigo_light_skin_male_bronze.mhmat",
+  "eyes": "high-poly/high-poly.mhclo",
+  "teeth": "teeth_base/teeth_base.mhclo",
+  "tongue": "tongue01/tongue01.mhclo",
+  "eyebrows": "eyebrow011/eyebrow011.mhclo",
+  "hair": "culturalibre_hair_05/culturalibre_hair_05.mhclo",
+  "clothes": [
+    "elvs_male_athletic_tank1/elvs_male_athletic_tank1.mhclo",
+    "mindfront_male_swimming_trunks_01/mindfront_male_swimming_trunks_01.mhclo",
+    "punkduck_running_shoes_01/punkduck_running_shoes_01.mhclo"
+  ],
+  "hips_height": 0.95,
+  "texture_edits": {
+    "young_lightskinned_male_diffuse_Bronze": {
+      "source": "skins/toigo_light_skin_male_bronze/young_lightskinned_male_diffuse_Bronze.png",
+      "tint": {
+        "rgb": [150, 110, 85],
+        "strength": 0.6
+      },
+      "normal": {
+        "strength": 1.8
+      }
+    },
+    "wb_tex3": {
+      "source": "clothes/elvs_male_athletic_tank1/wb_tex3.png",
+      "tint": {
+        "rgb": [255, 255, 255],
+        "strength": 0.85
+      }
+    },
+    "M_Swimming_trunks_01": {
+      "source": "clothes/mindfront_male_swimming_trunks_01/M_Swimming_trunks_01.png",
+      "tint": {
+        "rgb": [64, 48, 42],
+        "strength": 1.0
+      }
+    },
+    "hair_05": {
+      "source": "hair/culturalibre_hair_05/hair_05.png",
+      "tint": {
+        "rgb": [30, 26, 24],
+        "strength": 0.8
+      }
+    }
+  },
+  "subdiv": false
+}

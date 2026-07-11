@@ -22,7 +22,7 @@ build() {
   /usr/bin/python3 "$DIR/prepare_textures.py" "$cfg" || echo "   (no texture edits configured — skipped)"
 
   echo "== [$sex] blender generation =="
-  "$BLENDER" --background --python "$DIR/generate_coach.py" -- "$cfg" "$raw" 2>&1 \
+  "$BLENDER" --background --python "$DIR/generate_coach.py" -- "$cfg" "$raw" "$DIR/out/$sex-preview.png" 2>&1 \
     | grep -E '^\[coach\]|Error|Traceback' || true
   [ -f "$raw" ] || { echo "FATAL: blender produced no GLB"; exit 1; }
 
@@ -30,7 +30,7 @@ build() {
   # Faces sell the avatar: skin stays at source resolution (2048-class).
   # Everything else gets budgeted: clothes/hair/eyes 1024, mouth interior + brows 512.
   $GLTF resize "$raw" "$out" --width 1024 --height 1024 \
-    --pattern "{crude_male_tex,shorttex*,sneaker*,short0*,ponytail*,braid*,bob0*,female_sportsuit*,punkduck*,brown_eye,*_eye*,Tank_Top*,M_Swimming*}" 2>&1 | tail -1
+    --pattern "{crude_male_tex,shorttex*,sneaker*,short0*,ponytail*,braid*,bob0*,female_sportsuit*,punkduck*,brown_eye,*_eye*,Tank_Top*,M_Swimming*,Polo_*,shoesJean*,male_casualsuit*,female_casualsuit*,Shoes_Oxford*,dudoc_balletflat*,toptex*,highneckcroptop*,shortjeans*,runningshoes*,tennisshoes*,Hair_bun*,short_messy*,StrawberryBlondHair*,BakedHair*,female_elegantsuit*,laratop*,normals*,hair_0*,wb_*}" 2>&1 | tail -1
   $GLTF resize "$out" "$out" --width 512 --height 512 \
     --pattern "{teeth*,tongue*,eyebrow*,eyelash*}" 2>&1 | tail -1
   # WebP re-encode: PNG diffuse maps are 3-4x larger for identical visual quality; webp is
