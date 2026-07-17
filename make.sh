@@ -44,6 +44,13 @@ build() {
   # Blender already exports morphs sparsely; resize+webp above do the real shrinking.
   rm -f "$raw" "$sparse"
 
+  echo "== [$sex] posed skinning diagnostic =="
+  # Renders the FINAL GLB with arms dropped to idle — rest-pose previews hide garment
+  # skinning bugs (the smart-casual shirts shipped torn). VIEW this before shipping.
+  "$BLENDER" --background --python "$DIR/diag_pose.py" -- "$out" "$DIR/out/$sex-posed.png" 2>&1 \
+    | grep -E '^\[diag\]|Error|Traceback' || true
+  [ -f "$DIR/out/$sex-posed.png" ] || { echo "FATAL: posed diagnostic render missing"; exit 1; }
+
   echo "== [$sex] report =="
   ls -la "$out" | awk '{printf "   size: %.1f MB\n", $5/1e6}'
   python3 - "$out" <<'PY'

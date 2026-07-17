@@ -33,7 +33,9 @@ CFG = json.loads(CONFIG_PATH.read_text())
 from bl_ext.blender_org.mpfb.services.humanservice import HumanService
 from bl_ext.blender_org.mpfb.services.objectservice import ObjectService
 from bl_ext.blender_org.mpfb.services.rigservice import RigService
+from bl_ext.blender_org.mpfb.services.clothesservice import ClothesService
 from bl_ext.blender_org.mpfb.entities.rig import Rig
+from bl_ext.blender_org.mpfb.entities.clothes.mhclo import Mhclo
 
 # ---- TalkingHead addon helpers (plain functions; exec the file, skip registration) ---------
 th = {"__file__": str(VENDOR / "talkinghead-addon.py"), "__name__": "talkinghead_helpers"}
@@ -169,21 +171,52 @@ for obj in list(bpy.data.objects):
 # BASEMESH (mhclo vertex mapping), not to bones — they carry no bone vertex groups of their
 # own, so an armature modifier alone exports them as STATIC meshes (the glTF exporter skips
 # the skin). That was the invisible root defect behind every in-app mangling: TalkingHead
-# posed the skinned body while clothes/hair/eyes stayed frozen at rest. Transfer the body's
-# bone weights onto each child (nearest-face interpolation), THEN add the modifier.
+# posed the skinned body while clothes/hair/eyes stayed frozen at rest.
+#
+# Weight source, in order of preference:
+#   1. The asset's own mhclo BINDING (ClothesService.interpolate_weights): every garment
+#      vert is tied to the 3 specific basemesh verts it was FITTED to, so a sleeve vert can
+#      only ever inherit arm weights and a waistband vert hip weights. This is how MakeHuman
+#      itself weights proxies, and it is immune to the A-pose proximity ambiguities below.
+#   2. Fallback — proximity data_transfer. POLYINTERP_VNORPROJ (project along vertex
+#      normals), NOT POLYINTERP_NEAREST: nearest-face is ambiguous at the A-pose armpit
+#      (torso side and inner arm are equidistant) — sleeve verts grabbed torso weights and
+#      the smart-casual shirts TORE at the shoulders the moment the arms dropped to idle.
+def binding_weights(obj):
+    try:
+        path = ClothesService.find_clothes_absolute_path(obj)
+        if not path:
+            return False
+        m = Mhclo()
+        m.load(path)
+        # The binding is positional (mhclo vert N ↔ object vert N) — only trust it while
+        # the imported topology still matches 1:1 (we run before any decimation/bakes).
+        if not m.verts or len(m.verts) != len(obj.data.vertices):
+            log("mhclo binding mismatch:", obj.name, f"({len(m.verts or [])} vs {len(obj.data.vertices)} verts)")
+            return False
+        ClothesService.interpolate_weights(basemesh, obj, armature, m)
+        return True
+    except Exception as e:  # noqa: BLE001 — any failure just falls back to proximity
+        log("mhclo binding failed:", obj.name, repr(e))
+        return False
+
 children = [o for o in bpy.data.objects if o.type == 'MESH' and o is not basemesh]
 for obj in children:
-    bpy.ops.object.select_all(action='DESELECT')
-    obj.select_set(True)
-    basemesh.select_set(True)
-    bpy.context.view_layer.objects.active = basemesh
-    bpy.ops.object.data_transfer(
-        use_create=True,
-        data_type='VGROUP_WEIGHTS',
-        layers_select_src='ALL',
-        layers_select_dst='NAME',
-        vert_mapping='POLYINTERP_NEAREST',
-    )
+    if binding_weights(obj):
+        log("weights from mhclo binding:", obj.name)
+    else:
+        bpy.ops.object.select_all(action='DESELECT')
+        obj.select_set(True)
+        basemesh.select_set(True)
+        bpy.context.view_layer.objects.active = basemesh
+        bpy.ops.object.data_transfer(
+            use_create=True,
+            data_type='VGROUP_WEIGHTS',
+            layers_select_src='ALL',
+            layers_select_dst='NAME',
+            vert_mapping='POLYINTERP_VNORPROJ',
+        )
+        log("weights from proximity transfer:", obj.name)
     RigService.ensure_armature_modifier(obj, armature)
     if obj.parent is None or obj.parent is basemesh:
         obj.parent = armature
@@ -207,23 +240,31 @@ for obj in children:
 
     # Same failure, second bone family: pants/waistband verts also grab Arm/ForeArm
     # weights from the forearms hovering beside the hips, and shear sideways when the
-    # arms drop to idle. Sleeve CUFFS legitimately sit at hip HEIGHT in the A-pose
-    # though, so the strip needs height AND centerline distance — cuffs hang wide of
-    # the body and keep their arm weights. Thresholds derive from bone landmarks so
-    # they hold at any unit scale.
+    # arms drop to idle. Position alone can NOT separate pants from sleeves — a fitted
+    # shirt's sleeves dip below the navel line and inside any hip-width cut, and the
+    # first (position-only) version of this strip deleted their legitimate weights: the
+    # sleeves froze in A-pose while the arms dropped out of them (the smart-casual
+    # tearing). Discriminate by WEIGHT SHARE instead: contamination is always a minority
+    # of a vert's total weight (a waistband vert is Hips/Leg-dominant), while real sleeve
+    # verts are Arm-dominant — strip arm weights below the navel only where they are the
+    # minority. Thresholds derive from bone landmarks so they hold at any unit scale.
     arm_groups = {g.index: g for g in obj.vertex_groups
                   if any(k in g.name for k in ("Arm", "Shoulder"))}
     if arm_groups and "Hips" in armature.data.bones and "Neck" in armature.data.bones:
         hips_z = (armature.matrix_world @ armature.data.bones["Hips"].head_local).z
         neck_z = (armature.matrix_world @ armature.data.bones["Neck"].head_local).z
-        upleg_x = abs((armature.matrix_world @ armature.data.bones["LeftUpLeg"].head_local).x)
         z_cut = hips_z + 0.25 * (neck_z - hips_z)      # ~navel line
-        x_cut = 2.5 * max(upleg_x, 1e-6)               # ~just past the outer hip
         mw = obj.matrix_world
         strip = []
         for v in obj.data.vertices:
             co = mw @ v.co
-            if co.z < z_cut and abs(co.x) < x_cut and any(ge.group in arm_groups for ge in v.groups):
+            if co.z >= z_cut:
+                continue
+            arm_w = sum(ge.weight for ge in v.groups if ge.group in arm_groups)
+            if arm_w <= 0.0:
+                continue
+            total_w = sum(ge.weight for ge in v.groups)
+            if arm_w < 0.5 * total_w:                  # minority = contamination, not sleeve
                 strip.append(v.index)
         if strip:
             for g in arm_groups.values():
@@ -232,7 +273,7 @@ for obj in children:
             obj.select_set(True)
             bpy.context.view_layer.objects.active = obj
             bpy.ops.object.vertex_group_normalize_all(lock_active=False)
-            log("stripped arm weights from pants region:", obj.name, f"({len(strip)} verts)")
+            log("stripped minority arm weights below navel:", obj.name, f"({len(strip)} verts)")
 log("child meshes rigged (weights transferred):", [o.name for o in children])
 
 # Some MakeHuman-community assets are absurdly dense (a plain elvs tank is 58k verts —
@@ -409,6 +450,9 @@ bpy.ops.export_scene.gltf(
 log("exported", OUT_GLB, f"{OUT_GLB.stat().st_size/1e6:.1f} MB")
 
 # ---- 8) Optional preview render --------------------------------------------------------------
+# Rest pose only. Rest-pose previews HIDE skinning bugs (the smart-casual shirts shipped
+# torn exactly this way) — the POSED gate lives in diag_pose.py, which make.sh runs on the
+# FINAL exported GLB (bone axes there match what TalkingHead actually poses).
 if PREVIEW:
     scene = bpy.context.scene
     cam = bpy.data.objects.new("cam", bpy.data.cameras.new("cam"))
